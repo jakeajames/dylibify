@@ -85,7 +85,6 @@ void patch_pagezero(FILE *obj_file, off_t offset, struct load_command *cmd, BOOL
     //----If it's a FAT binary do not copy it twice----//
     if (!copied) {
         strcpy((char *)dylib_cmd + sizeof(struct dylib_command), ([[NSString stringWithFormat:@"@executable_path/%@", [@(target) lastPathComponent]] UTF8String]));
-        copied = true;
     }
     
     printf("\t\t[*] Doing the magic\n");
