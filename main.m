@@ -90,7 +90,7 @@ void patch_pagezero(FILE *obj_file, off_t offset, struct load_command *cmd, BOOL
     printf("\t\t[*] Doing the magic\n");
     
     write_bytes(obj_file, offset, sizeofseg, dylib_cmd);
-
+    
     free(dylib_cmd);
 }
 
@@ -122,7 +122,7 @@ void patch_dyldinfo(FILE *file, off_t offset, struct dyld_info_command *dyldinfo
             switch (*bytes & BIND_OPCODE_MASK) {
                 case BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB:
                     printf("\t\t[-] BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB before = 0x%x\n", *bytes);
-                    *bytes -= 1;
+                    if ((*bytes & 0xF) == 2) *bytes -= 1;
                     write_bytes(file, offset + dyldinfo->bind_off + i, sizeof(uint8_t), bytes);
                     bytes = load_bytes(file, offset + dyldinfo->bind_off + i, sizeof(uint8_t));
                     printf("\t\t[+] BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB now = 0x%x\n", *bytes);
@@ -156,7 +156,7 @@ void patch_dyldinfo(FILE *file, off_t offset, struct dyld_info_command *dyldinfo
             switch (*bytes & BIND_OPCODE_MASK) {
                 case BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB:
                     printf("\t\t[-] BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB before = 0x%x\n", *bytes);
-                    *bytes -= 1;
+                    if ((*bytes & 0xF) == 2) *bytes -= 1;
                     write_bytes(file, offset + dyldinfo->lazy_bind_off + i, sizeof(uint8_t), bytes);
                     bytes = load_bytes(file, offset + dyldinfo->lazy_bind_off + i, sizeof(uint8_t));
                     printf("\t\t[+] BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB now = 0x%x\n", *bytes);
@@ -190,7 +190,7 @@ void patch_dyldinfo(FILE *file, off_t offset, struct dyld_info_command *dyldinfo
             switch (*bytes & BIND_OPCODE_MASK) {
                 case BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB:
                     printf("\t\t[-] BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB before = 0x%x\n", *bytes);
-                    *bytes -= 1;
+                    if ((*bytes & 0xF) == 2) *bytes -= 1;
                     write_bytes(file, offset + dyldinfo->weak_bind_off + i, sizeof(uint8_t), bytes);
                     bytes = load_bytes(file, offset + dyldinfo->weak_bind_off + i, sizeof(uint8_t));
                     printf("\t\t[+] BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB now = 0x%x\n", *bytes);
@@ -239,8 +239,7 @@ int dylibify(const char *macho, const char *saveto) {
         return -1;
     }
     
-    [error release];
-    [fileManager release];
+    
     
     //----Open the copied file for updating, in binary mode----//
     FILE *file = fopen(saveto, "r+b");
@@ -446,10 +445,11 @@ err:
 }
 
 int main(int argc, const char * argv[]) {
-    if (argc != 3) {
-        printf("Usage:\n\t%s <in> <out>\nExample:\n\t%s /usr/bin/executable /usr/lib/dylibified.dylib\n", argv[0], argv[0]);
-        return -1;
-    }
+     if (argc != 3) {
+         printf("Usage:\n\t%s <in> <out>\nExample:\n\t%s /usr/bin/executable /usr/lib/dylibified.dylib\n", argv[0], argv[0]);
+         return -1;
+     }
+    
     dylibify(argv[1], argv[2]);
     return 0;
 }
